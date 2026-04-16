@@ -107,17 +107,25 @@ def process_single_page(args):
             
             # Send to OCR.space
             files = {'file': ('page.jpg', img_bytes, 'image/jpeg')}
-            response = requests.post('https://api.ocr.space/parse/image', files=files, data=payload)
+            response = requests.post('https://api.ocr.space/parse/image', files=files, data=payload, timeout=20)
+            
+            if response.status_code != 200:
+                raise Exception(f"API Server Error: {response.status_code}")
+                
             result = response.json()
             
-            if result.get('OCRExitCode') == 1:
-                text = result.get('ParsedResults')[0].get('ParsedText')
-                # Since we can't easily get a searchable PDF from API without complex setup, 
-                # we skip the PDF layer in free fallback but keep the text
-                print(f"[OK] Page {page_num+1} (Cloud) Completed.")
-                return None, text # Return None for PDF but text for Word
+            # Check if result is a dictionary (it should be)
+            if isinstance(result, dict) and result.get('OCRExitCode') == 1:
+                parsed_results = result.get('ParsedResults', [])
+                if parsed_results:
+                    text = parsed_results[0].get('ParsedText', '')
+                    print(f"[OK] Page {page_num+1} (Cloud) Completed.")
+                    return None, text
+                else:
+                    raise Exception("API returned success but no text found.")
             else:
-                raise Exception(f"Cloud API Error: {result.get('ErrorMessage')}")
+                error_info = result.get('ErrorMessage') if isinstance(result, dict) else str(result)
+                raise Exception(f"Cloud API Error: {error_info}")
 
     except Exception as e:
         error_msg = str(e)
@@ -212,21 +220,14 @@ def master_ocr_process(input_pdf_path, file_id):
 
 @app.route('/')
 def index():
+    status_msg = ""
     if IMPORT_ERRORS:
-        return f"<h1>Library Error</h1><p style='color:red'>{'<br>'.join(IMPORT_ERRORS)}</p>", 500
+        status_msg = f"<div style='background:#fee2e2; border:1px solid #ef4444; color:#991b1b; padding:10px; margin-bottom:20px; border-radius:10px; font-size:12px;'><strong>Vercel Compatibility Note:</strong> Local libraries (Tesseract/Poppler) are missing. System will use Cloud OCR Fallback.</div>"
+    
     try:
-        return render_template('index.html')
+        return render_template('index.html', status_msg=status_msg)
     except Exception as e:
-        # Diagnostic file check
-        try:
-            curr = os.getcwd()
-            files = os.listdir(curr)
-            # Check inside api if it exists
-            api_files = os.listdir(os.path.join(curr, 'api')) if 'api' in files else "N/A"
-            diag = f"CWD: {curr}<br>FILES: {files}<br>API_FILES: {api_files}"
-        except:
-            diag = "Diagnostics failed"
-        return f"<h1>Template Load Error</h1><p>{str(e)}</p><hr>{diag}", 500
+        return f"<h1>Template Load Error</h1><p>{str(e)}</p>", 500
 
 @app.errorhandler(500)
 def handle_500(e):

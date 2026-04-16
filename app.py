@@ -22,6 +22,10 @@ except Exception as e:
 from flask import Flask, render_template, request, jsonify, send_file
 from PIL import Image
 import traceback
+import requests
+import base64
+import io
+import time
 
 # Absolute Paths for stability
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -75,19 +79,50 @@ def process_single_page(args):
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
         doc.close() # Close immediately after rendering
 
-        # Generate searchable PDF for this page
-        pdf_data = pytesseract.image_to_pdf_or_hocr(img, extension='pdf')
-        with open(temp_pdf_page, 'wb') as f:
-            f.write(pdf_data)
-        
-        # Extract text for Word doc
-        text = pytesseract.image_to_string(img)
-        print(f"[OK] Page {page_num+1} Completed.")
-        return temp_pdf_page, text
+        # Local Tesseract Attempt
+        try:
+            # Generate searchable PDF for this page
+            pdf_data = pytesseract.image_to_pdf_or_hocr(img, extension='pdf')
+            with open(temp_pdf_page, 'wb') as f:
+                f.write(pdf_data)
+            
+            # Extract text for Word doc
+            text = pytesseract.image_to_string(img)
+            print(f"[OK] Page {page_num+1} (Local) Completed.")
+            return temp_pdf_page, text
+        except Exception as local_err:
+            # Cloud Fallback (OCR.space)
+            print(f"[*] Local OCR Failed, trying Cloud for Page {page_num+1}...")
+            # Convert image to bytes for API
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='JPEG')
+            img_bytes = img_byte_arr.getvalue()
+            
+            payload = {
+                'apikey': 'helloworld', # Default free key
+                'language': 'eng',
+                'isOverlayRequired': False,
+                'isCreateSearchablePdf': False, # Free tier doesn't support searchable PDF well for single images
+            }
+            
+            # Send to OCR.space
+            files = {'file': ('page.jpg', img_bytes, 'image/jpeg')}
+            response = requests.post('https://api.ocr.space/parse/image', files=files, data=payload)
+            result = response.json()
+            
+            if result.get('OCRExitCode') == 1:
+                text = result.get('ParsedResults')[0].get('ParsedText')
+                # Since we can't easily get a searchable PDF from API without complex setup, 
+                # we skip the PDF layer in free fallback but keep the text
+                print(f"[OK] Page {page_num+1} (Cloud) Completed.")
+                return None, text # Return None for PDF but text for Word
+            else:
+                raise Exception(f"Cloud API Error: {result.get('ErrorMessage')}")
+
     except Exception as e:
         error_msg = str(e)
         print(f"[!] Error on Page {page_num+1}: {error_msg}")
-        return None, f"Page {page_num+1} Error: {error_msg}"
+        return None, f"Page {error_msg}"
 
 def master_ocr_process(input_pdf_path, file_id):
     # Only open to get page count, then close
@@ -105,8 +140,10 @@ def master_ocr_process(input_pdf_path, file_id):
     print(f"Running OCR Engine (Memory Optimized Mode)...")
     processing_status[file_id] = {"current": 0, "total": total_pages, "status": "processing"}
     
-    # Using submit/as_completed for progress tracking
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    # On Vercel (Cloud Mode), we MUST use 1 worker because free API keys only allow 1 concurrent request
+    max_workers = 1 if IS_VERCEL else 3
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(process_single_page, arg): i for i, arg in enumerate(worker_args)}
         
         # We need to preserve order for the final merge/docx, but results come in any order
@@ -134,32 +171,40 @@ def master_ocr_process(input_pdf_path, file_id):
         elif res and res[1]:
             last_worker_error = res[1]
 
-    if not temp_pdfs:
+    if not temp_pdfs and not full_text:
         raise Exception(f"OCR failed to process any pages. Last error from engine: {last_worker_error}")
 
-    print(f"Merging {len(temp_pdfs)} pages into final Searchable PDF...")
-    output_pdf_path = os.path.join(PROCESSED_FOLDER, f"{file_id}_searchable.pdf")
-    combined_pdf = fitz.open()
-    
-    for temp_pdf in temp_pdfs:
-        if os.path.exists(temp_pdf):
-            with fitz.open(temp_pdf) as m_pdf:
-                combined_pdf.insert_pdf(m_pdf)
-            os.remove(temp_pdf)
+    # Initialize output paths
+    output_pdf_path = None
+    output_docx_path = None
 
-    # Save with high compression and garbage collection to reduce file size
-    combined_pdf.save(output_pdf_path, garbage=3, deflate=True, clean=True)
-    combined_pdf.close()
+    if temp_pdfs:
+        print(f"Merging {len(temp_pdfs)} pages into final Searchable PDF...")
+        output_pdf_path = os.path.join(PROCESSED_FOLDER, f"{file_id}_searchable.pdf")
+        combined_pdf = fitz.open()
+        
+        for temp_pdf in temp_pdfs:
+            if os.path.exists(temp_pdf):
+                with fitz.open(temp_pdf) as m_pdf:
+                    combined_pdf.insert_pdf(m_pdf)
+                os.remove(temp_pdf)
 
-    print("Creating Word Document...")
-    output_docx_path = os.path.join(PROCESSED_FOLDER, f"{file_id}_editable.docx")
-    doc = Document()
-    for i, text in enumerate(full_text):
-        doc.add_heading(f'Page {i+1}', level=1)
-        doc.add_paragraph(text)
-        if i < len(full_text) - 1:
-            doc.add_page_break()
-    doc.save(output_docx_path)
+        # Save with high compression and garbage collection to reduce file size
+        combined_pdf.save(output_pdf_path, garbage=3, deflate=True, clean=True)
+        combined_pdf.close()
+    else:
+        print("[!] No searchable PDF pages generated (Cloud fallback active).")
+
+    if full_text:
+        print("Creating Word Document...")
+        output_docx_path = os.path.join(PROCESSED_FOLDER, f"{file_id}_editable.docx")
+        doc = Document()
+        for i, text in enumerate(full_text):
+            doc.add_heading(f'Page {i+1}', level=1)
+            doc.add_paragraph(text)
+            if i < len(full_text) - 1:
+                doc.add_page_break()
+        doc.save(output_docx_path)
     
     print("--- Document Processing Completed ---\n")
     processing_status[file_id]["status"] = "completed"

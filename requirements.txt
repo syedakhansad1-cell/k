@@ -1,0 +1,8 @@
+Flask
+pytesseract
+pdf2image
+pymupdf
+python-docx
+pillow
+werkzeug
+gunicorn

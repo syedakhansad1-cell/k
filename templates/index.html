@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Tool - PDF Processor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        .drag-over {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            border-color: #3b82f6 !important;
+            transform: scale(1.01);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #1d4ed8 0%, #7e22ce 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .btn-premium {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+        
+        .card-pulse {
+            animation: pulse-border 2s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { border-color: rgba(37, 99, 235, 0.3); }
+            50% { border-color: rgba(37, 99, 235, 0.8); }
+            100% { border-color: rgba(37, 99, 235, 0.3); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+</head>
+<body class="bg-[#f8fafc] min-h-screen text-slate-900 selection:bg-blue-100">
+    <!-- Decorative background elements -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-200/30 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-200/30 blur-[120px] rounded-full"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 glass border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 group cursor-pointer">
+                    <div class="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-1.414 0l-2.414-2.414A1 1 0 0 0 3.586 18H4a1 1 0 110-2V4z"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent leading-none">OCR Studio</span>
+                        <span class="text-[11px] font-black text-blue-700 mt-1">Created by Syeda Khansa</span>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">Features</a>
+                    <a href="#" class="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">How it works</a>
+                    <div class="h-4 w-[1px] bg-slate-200"></div>
+                    <p class="text-sm font-semibold text-blue-600">Free unlimited processing</p>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-6 py-12 lg:py-20 animate-slide-in">
+        <!-- Hero Section -->
+        <div class="text-center mb-16 space-y-4">
+            <span class="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-xs font-bold tracking-widest uppercase">Powered by Tesseract OCR</span>
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900">
+                Transform scanned PDFs into <span class="gradient-text">Searchable Documents</span>
+            </h1>
+            <p class="text-sm font-black text-blue-700 uppercase tracking-widest mt-2 px-4 py-1 bg-blue-50/50 inline-block rounded-lg border border-blue-100 italic">Created by Syeda Khansa</p>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                Our high-performance OCR tool adds a searchable text layer to your images and PDFs, making them ready for search, copy-paste, and Word editing.
+            </p>
+        </div>
+
+        <!-- Main Card Container -->
+        <div class="relative group">
+            <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200"></div>
+            
+            <div class="relative bg-white rounded-2xl shadow-2xl shadow-indigo-100 overflow-hidden border border-slate-100">
+                <!-- Upload Section -->
+                <div id="uploadSection" class="p-8 md:p-12">
+                    <div class="flex items-center justify-center mb-10">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex flex-col items-center">
+                                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">1</div>
+                                <span class="text-xs font-semibold mt-2 text-slate-900">Upload</span>
+                            </div>
+                            <div class="w-16 h-[2px] bg-slate-100 mb-6"></div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-sm font-bold">2</div>
+                                <span class="text-xs font-semibold mt-2 text-slate-400">Process</span>
+                            </div>
+                            <div class="w-16 h-[2px] bg-slate-100 mb-6"></div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-sm font-bold">3</div>
+                                <span class="text-xs font-semibold mt-2 text-slate-400">Download</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-3xl p-10 md:p-16 text-center cursor-pointer transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/50">
+                        <div class="space-y-6">
+                            <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                                <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-xl font-bold text-slate-900">Drop your PDF document here</p>
+                                <p class="text-slate-500">or click to browse your local files</p>
+                            </div>
+                            <div class="flex items-center justify-center space-x-4 pt-2">
+                                <span class="flex items-center text-xs font-medium text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                                    <svg class="w-4 h-4 mr-1.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A1 1 0 0111.293 2.707l3 3a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                    PDF Format
+                                </span>
+                                <span class="flex items-center text-xs font-medium text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                                    <svg class="w-4 h-4 mr-1.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/></svg>
+                                    Max 100MB
+                                </span>
+                            </div>
+                        </div>
+                        <input id="fileInput" type="file" accept=".pdf" class="hidden">
+                    </div>
+
+                    <div id="fileInfo" class="mt-8 hidden">
+                        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 flex items-center justify-between group/file animate-slide-in">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M4 4a2 2 0 012-2h4.586A1 1 0 0111.293 2.707l3 3a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p id="fileName" class="font-bold text-slate-900 truncate pr-4"></p>
+                                    <p id="fileSize" class="text-sm text-slate-500 font-medium"></p>
+                                </div>
+                            </div>
+                            <button id="removeFile" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="errorMessage" class="mt-8 hidden">
+                        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center space-x-3 text-red-700 animate-slide-in">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            <span id="errorText" class="text-sm font-semibold"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-col md:flex-row gap-4">
+                        <button id="uploadBtn" type="button" class="flex-[2] btn-premium text-white font-bold py-4 rounded-2xl disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed shadow-lg shadow-blue-100">
+                            Process with High-Precision OCR
+                        </button>
+                        <button id="resetBtn" type="button" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-4 rounded-2xl transition-all">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div id="processingSection" class="hidden p-12 md:p-20 text-center space-y-10 animate-slide-in">
+                    <div class="relative flex justify-center">
+                        <div class="w-24 h-24 rounded-full border-4 border-slate-100"></div>
+                        <svg class="spinner absolute top-0 w-24 h-24 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle class="opacity-0" cx="12" cy="12" r="10"></circle>
+                            <path stroke-linecap="round" stroke-width="4" d="M12 2a10 10 0 0110 10"></path>
+                        </svg>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-2xl font-bold text-slate-900">Analyzing Your Document</h3>
+                        <p class="text-slate-500 max-w-sm mx-auto">Please wait while our AI engine identifies text structures and applies OCR formatting...</p>
+                    </div>
+
+                    <div class="w-full max-w-md mx-auto space-y-4">
+                        <div class="bg-slate-100 rounded-full h-4 overflow-hidden p-1 border border-slate-200 shadow-inner">
+                            <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full w-0 transition-all duration-500 ease-out"></div>
+                        </div>
+                        <div id="progressStatus" class="text-sm font-bold text-blue-600 animate-pulse">
+                            Initializing OCR Engine...
+                        </div>
+                        <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <span>Initializing</span>
+                            <span class="text-blue-600">Processing</span>
+                            <span>Finalizing</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="successSection" class="hidden p-8 md:p-12 animate-slide-in">
+                    <div class="max-w-2xl mx-auto space-y-12">
+                        <div class="text-center space-y-4">
+                            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 scale-110">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                            <h3 class="text-3xl font-extrabold text-slate-900">Your Files are Ready!</h3>
+                            <p class="text-slate-500">Processing completed successfully. You can now download the output formats below.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-blue-50/50 border border-blue-100 rounded-3xl p-6 space-y-6 hover:shadow-xl transition-all">
+                                <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-1.414 0l-2.414-2.414A1 1 0 0 0 3.586 18H4a1 1 0 110-2V4z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Searchable PDF</h4>
+                                    <p class="text-sm text-slate-500">Perfect for archiving and document search.</p>
+                                </div>
+                                <a id="downloadPdfBtn" href="#" download class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md">
+                                    Download PDF
+                                </a>
+                            </div>
+
+                            <div class="bg-green-50/50 border border-green-100 rounded-3xl p-6 space-y-6 hover:shadow-xl transition-all">
+                                <div class="w-12 h-12 bg-green-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-green-100">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900">Editable Word</h4>
+                                    <p class="text-sm text-slate-500">Ideal for editing and content repurposing.</p>
+                                </div>
+                                <a id="downloadDocxBtn" href="#" download class="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-2xl transition-all shadow-md">
+                                    Download DOCX
+                                </a>
+                            </div>
+                        </div>
+
+                        <button id="uploadAnotherBtn" type="button" class="w-full text-slate-500 font-bold py-6 hover:text-slate-900 transition-colors uppercase tracking-widest text-xs">
+                            ← Process Another Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="glass p-8 rounded-3xl space-y-4 hover:bg-white transition-all">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">High Precision OCR</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Multilingual text recognition with structural analysis for complex layouts and tables.</p>
+            </div>
+            <div class="glass p-8 rounded-3xl space-y-4 hover:bg-white transition-all">
+                <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">Fast Processing</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Optimized multi-threaded processing ensures large documents are ready in seconds.</p>
+            </div>
+            <div class="glass p-8 rounded-3xl space-y-4 hover:bg-white transition-all">
+                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">Secure & Confidential</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Processing is handled on our secure server. Your data is deleted immediately after download.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-20 border-t border-slate-100 py-12">
+        <div class="max-w-6xl mx-auto px-6 text-center space-y-4">
+            <p class="text-slate-400 text-sm font-medium italic">"Precision in every character."</p>
+            <p class="text-slate-500 text-sm">© 2026 OCR Studio. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const processingSection = document.getElementById('processingSection');
+        const successSection = document.getElementById('successSection');
+        const fileInfo = document.getElementById('fileInfo');
+        const errorMessage = document.getElementById('errorMessage');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const removeFileBtn = document.getElementById('removeFile');
+        const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const errorText = document.getElementById('errorText');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        const downloadDocxBtn = document.getElementById('downloadDocxBtn');
+
+        let selectedFile = null;
+        let processedFileId = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            clearError();
+            if (!file.type.includes('pdf')) {
+                showError('Only PDF files are allowed');
+                fileInput.value = '';
+                return;
+            }
+            if (file.size > 100 * 1024 * 1024) {
+                showError('File size must be less than 100 MB');
+                fileInput.value = '';
+                return;
+            }
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+            uploadBtn.disabled = false;
+        }
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            uploadBtn.disabled = true;
+            clearError();
+        });
+
+        uploadBtn.addEventListener('click', uploadFile);
+
+        // Helper to generate UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        async function uploadFile() {
+            if (!selectedFile) return;
+            
+            const file_id = generateUUID();
+            processedFileId = file_id;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('file_id', file_id);
+            
+            uploadBtn.disabled = true;
+            clearError();
+            
+            try {
+                uploadSection.classList.add('hidden');
+                processingSection.classList.remove('hidden');
+                
+                // Start tracking progress IMMEDIATELY
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const statusResp = await fetch(`/status/${file_id}`);
+                        const statusData = await statusResp.json();
+                        
+                        if (statusData.total > 0) {
+                            const percent = Math.round((statusData.current / statusData.total) * 100);
+                            document.getElementById('progressBar').style.width = `${percent}%`;
+                            document.getElementById('progressStatus').textContent = `Processing: Page ${statusData.current} of ${statusData.total}`;
+                            
+                            if (statusData.status === "completed") {
+                                clearInterval(pollInterval);
+                                showSuccess();
+                            }
+                        }
+                    } catch (e) {
+                         // Likely server still starting up
+                    }
+                }, 1000);
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (!response.ok) {
+                    clearInterval(pollInterval);
+                    throw new Error(data.error || 'Upload failed');
+                }
+                
+                // Final check to handle small files that finish before next poll
+                clearInterval(pollInterval);
+                showSuccess();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                resetSections();
+            }
+        }
+
+        function showSuccess() {
+            processingSection.classList.add('hidden');
+            successSection.classList.remove('hidden');
+
+            // Set precise download links with extensions
+            downloadPdfBtn.href = `/download/${processedFileId}/OCR_Result.pdf`;
+            downloadPdfBtn.setAttribute('download', 'OCR_Result.pdf');
+            
+            downloadDocxBtn.href = `/download/${processedFileId}/OCR_Result.docx`;
+            downloadDocxBtn.setAttribute('download', 'OCR_Result.docx');
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function clearError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        function resetSections() {
+            uploadSection.classList.remove('hidden');
+            processingSection.classList.add('hidden');
+            successSection.classList.add('hidden');
+            uploadBtn.disabled = false;
+        }
+
+        resetBtn.addEventListener('click', resetForm);
+        uploadAnotherBtn.addEventListener('click', resetForm);
+
+        function resetForm() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            uploadBtn.disabled = true;
+            resetSections();
+            processedFileId = null;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        uploadBtn.disabled = true;
+    </script>
+</body>
+</html>
